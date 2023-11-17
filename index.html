@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Seller page</title>
+</head>
+
+<body>
+    <form id="userInputForm">
+        <label for="candyName">Candy Name : </label>
+        <input type="text" id="candyName">
+        <label for="des">Description : </label>
+        <input type="text" id="des">
+        <label for="price">Price : </label>
+        <input type="number" id="price">
+        <label for="quantity">Quantity : </label>
+        <input type="number" id="quantity">
+        <button type="submit"> Add item</button>
+    </form>
+
+    <h3>All Orders</h3>
+    <div id="allOrders"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const formInput = document.getElementById("userInputForm");
+        const allOrdersDiv = document.getElementById("allOrders");
+
+        formInput.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const candyName = document.getElementById("candyName").value;
+            const description = document.getElementById("des").value;
+            const dishPrice = document.getElementById("price").value;
+            const dishQuantity = document.getElementById("quantity").value;
+
+            const dish = {
+                candyName: candyName,
+                descriptions: description,
+                price: dishPrice,
+                quantity: dishQuantity
+            };
+
+            addOrder(dish);
+            formInput.reset();
+        });
+
+        function displayOrder(dish) {
+            const orderItem = document.createElement("div");
+            orderItem.id = `order_${dish._id}`;
+
+            const candyNameInfo = document.createElement("p");
+            candyNameInfo.textContent = `Candy Name: ${dish.candyName}`;
+
+            const descriptionInfo = document.createElement("p");
+            descriptionInfo.textContent = `Description: ${dish.descriptions}`;
+
+            const priceInfo = document.createElement("p");
+            priceInfo.textContent = `Price: ${dish.price}`;
+
+            const quantityInfo = document.createElement("p");
+            quantityInfo.textContent = `Quantity: ${dish.quantity}`;
+            quantityInfo.id = `quantity_${dish._id}`;
+
+            const buyOneButton = document.createElement("button");
+            buyOneButton.textContent = "Buy One";
+            buyOneButton.addEventListener("click", () => {
+                decreaseQuantity(dish, 1);
+            });
+
+            const buyTwoButton = document.createElement("button");
+            buyTwoButton.textContent = "Buy Two";
+            buyTwoButton.addEventListener("click", () => {
+                decreaseQuantity(dish, 2);
+            });
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => {
+                deleteOrder(dish._id);
+            });
+
+            orderItem.appendChild(candyNameInfo);
+            orderItem.appendChild(descriptionInfo);
+            orderItem.appendChild(priceInfo);
+            orderItem.appendChild(quantityInfo);
+            orderItem.appendChild(buyOneButton);
+            orderItem.appendChild(buyTwoButton);
+            orderItem.appendChild(deleteButton);
+            allOrdersDiv.appendChild(orderItem);
+        }
+
+        function addOrder(dish) {
+            axios
+                .post(
+                    "https://crudcrud.com/api/902801e89f5f4f70ba84b1e5af80cbfc/orderPageData",
+                    dish
+                )
+                .then((res) => {
+                    dish._id = res.data._id;
+                    displayOrder(dish);
+                })
+                .catch((error) => console.log(error));
+        }
+
+        function decreaseQuantity(dish, amount) {
+            if (dish.quantity - amount < 0) {
+                alert("Quantity cannot be less than zero!");
+                return;
+            }
+
+            dish.quantity -= amount;
+            updateQuantity(dish);
+        }
+
+        function updateQuantity(dish) {
+            axios
+                .put(
+                    `https://crudcrud.com/api/902801e89f5f4f70ba84b1e5af80cbfc/orderPageData/${dish._id}`,
+                    { quantity: dish.quantity }
+
+                )
+                .then(() => {
+                    const quantityElement = document.getElementById(`quantity_${dish._id}`);
+                    if (quantityElement) {
+                        quantityElement.textContent = `Quantity: ${dish.quantity}`;
+                    }
+                })
+                .catch((error) => console.log(error));
+        }
+
+        function deleteOrder(orderId) {
+            axios
+                .delete(
+                    `https://crudcrud.com/api/902801e89f5f4f70ba84b1e5af80cbfc/orderPageData/${orderId}`
+                )
+                .then(() => {
+                    const orderItem = document.getElementById(`order_${orderId}`);
+                    if (orderItem) {
+                        orderItem.remove();
+                    }
+                })
+                .catch((error) => console.log(error));
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            axios
+                .get("https://crudcrud.com/api/902801e89f5f4f70ba84b1e5af80cbfc/orderPageData")
+                .then((res) => {
+                    const dishes = res.data;
+                    dishes.forEach((dish) => displayOrder(dish));
+                })
+                .catch((error) => console.log(error));
+        });
+    </script>
+</body>
+
+</html>
